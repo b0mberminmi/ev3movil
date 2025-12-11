@@ -1,37 +1,39 @@
-# Evaluación 2 - Desarrollo Móvil — TODO List
+# Evaluación 3 - Desarrollo Móvil — TODO List
 
-Aplicación de lista de tareas (TODO) desarrollada con React Native + Expo y TypeScript. 
-Proyecto creado como parte de la Evaluación 2 del curso de Desarrollo de Aplicaciones Móviles.
+Aplicación de lista de tareas (TODO) desarrollada con React Native + Expo y TypeScript que se conecta a una API backend externa. 
+Proyecto creado como parte de la Evaluación 3 del curso de Desarrollo de Aplicaciones Móviles.
 
 ## Enlace a la Demostración en Video
 
-[\[Enlace-Video\] ][shortVideo]
+
 
 ## Características
 
+- **Autenticación con API backend**: Login y registro contra servidor externo.
 - Gestión de tareas: crear, editar, completar y eliminar tareas.
 - Interfaz con navegación por pestañas (tabs).
-- Formularios controlados (validación básica).
-- Persistencia local del usuario (simulada con `AsyncStorage`).
-- Componentes reutilizables y hooks personalizados para la lógica de TODOs.
+- Formularios controlados con validación.
+- Persistencia de sesión de usuario con `AsyncStorage`.
+- Context API para gestión de estado de autenticación.
+- Componentes reutilizables y hooks personalizados.
+- Cliente HTTP con Axios para comunicación con la API.
 
-## Credenciales de prueba (solo para testing)
+## Credenciales de prueba
 
-Usa estas cuentas para acceder a la aplicación durante pruebas:
+Para acceder a la aplicación, crea un usuario en el panel de administración de la API o usa estas credenciales:
 
-- Email: `demo@eva.com`  
-	Password: `2025`
-- Email: `visitante@eva.com`  
-	Password: `1234`
-
-Nota: Estas credenciales están definidas en `constants/auth.ts` y se usan solo como datos de ejemplo en la evaluación.
+- Email: `user@e.com`  
+	Password: `123`
 
 ## Tecnologías
 
 - Expo (React Native)
 - React
 - TypeScript
-- `@react-native-async-storage/async-storage` (para simulación de sesión)
+- **Axios** (cliente HTTP para la API)
+- **Context API** (gestión de estado de autenticación)
+- `@react-native-async-storage/async-storage` (persistencia de sesión)
+- Expo Router (navegación)
 - Metro bundler (dev server)
 - Node.js, npm/yarn
 
@@ -39,7 +41,17 @@ Nota: Estas credenciales están definidas en `constants/auth.ts` y se usan solo 
 
 - Node.js (14+ recomendado)
 - npm o yarn
-- Opcional: Expo CLI (`npm install -g expo-cli`) para usar comandos globales
+- Opcional: Expo CLI (`npm install -g expo-cli`)
+
+## Configuración de Variables de Entorno
+
+Crea un archivo `.env.local` en la raíz del proyecto:
+
+```env
+EXPO_PUBLIC_API_URL=https://todo-list.dobleb.cl
+```
+
+Esta variable define la URL base de la API backend externa.
 
 ## Instalación y ejecución
 
@@ -59,13 +71,25 @@ Abre la app en un emulador o dispositivo con Expo Go / development build según 
 
 ## Estructura principal del proyecto
 
-- `app/` — Pantallas y rutas (puntos de entrada de la UI).
-- `components/` — Componentes reutilizables (`TodoItem.tsx`, `TodoForm.tsx`, etc.).
-- `hooks/` — Hooks personalizados (`useTodos.ts`).
+- `app/` — Pantallas y rutas (login, tabs, etc.).
+  - `index.tsx` — Pantalla de login.
+  - `(tabs)/` — Pantallas con navegación por pestañas (todos, perfil).
+  - `_layout.tsx` — Layout raíz con AuthProvider.
+- `components/` — Componentes reutilizables.
+  - `TodoItem.tsx`, `TodoForm.tsx` — Gestión de tareas.
+  - `context/auth-context.tsx` — Context de autenticación.
+- `services/` — Servicios de API.
+  - `auth-services.ts` — Cliente HTTP para autenticación.
+- `hooks/` — Hooks personalizados.
+  - `useTodos.ts` — Lógica de TODOs.
+- `constants/` — Constantes y configuración.
+  - `auth.ts` — Lógica de autenticación local.
+  - `config.ts` — Variables de entorno.
+  - `Colors.ts` — Paleta de colores.
 - `assets/` — Fuentes e imágenes.
-- `constants/` — Constantes y utilidades (ej. `auth.ts`, `Colors.ts`).
 - `package.json` — Dependencias y scripts.
 - `tsconfig.json` — Configuración de TypeScript.
+- `.env.local` — Variables de entorno (local).
 
 
 ## Uso de IA
@@ -79,7 +103,7 @@ Este proyecto es de uso académico y está estríctamente prohibido su uso para 
 Miembros del equipo y roles:
 - Luciano Lopresti: Desarollo.
 - Sebastián Masferrer: Desarrollo.
+- Víctor Mella: Desarrollo.
 - Loretto Herrera: Desarrollo.
 
 
-[shortVideo]: https://www.youtube.com/shorts/TK9YhSo2UbY
