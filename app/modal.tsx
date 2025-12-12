@@ -1,88 +1,55 @@
-import * as Location from 'expo-location';
-import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Alert, Linking } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
 import TodoForm from '../components/TodoForm';
 import useTodos from '../hooks/useTodos';
+import { useAuth } from '../components/context/auth-context';
+import getImageService from '../services/image-services';
 
 const NEON_GREEN = '#00FF00';
 const BLACK = 'black';
 
+interface LocationCoords {
+  latitude: number;
+  longitude: number;
+}
+
 export default function ModalScreen() {
   const router = useRouter();
-  const { userEmail } = useLocalSearchParams<{ userEmail?: string }>();
+  const { user } = useAuth();
+  const token = user?.token;
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const { createTodo, reload } = useTodos(token);
 
-  const emailString = userEmail ? String(userEmail) : '';
+  const handleCreateFromModal = async (task: {
+    title: string;
+    photoUri?: string;
+    location?: LocationCoords;
+  }) => {
+    if (!token) {
+      Alert.alert('Error', 'No hay sesión activa');
+      return;
+    }
 
-  const { createTodo } = useTodos(emailString);
+    setIsUploadingImage(true);
 
-  // Comprobar y (re)solicitar permisos de ubicación y cámara al abrir el modal.
-  // Si el usuario denegó permanentemente, mostramos un diálogo para abrir los ajustes.
-  React.useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        // Ubicación
-        const locStatus = await Location.getForegroundPermissionsAsync();
-        if (mounted && locStatus.status !== Location.PermissionStatus.GRANTED) {
-          const requested = await Location.requestForegroundPermissionsAsync();
-          if (!requested.granted) {
-            if (!requested.canAskAgain) {
-              Alert.alert(
-                'Permiso de ubicación requerido',
-                'La aplicación necesita acceso a la ubicación. Por favor, habilítalo en los ajustes.',
-                [
-                  { text: 'Abrir ajustes', onPress: () => Linking.openSettings() },
-                  { text: 'Cancelar', style: 'cancel' },
-                ]
-              );
-            }
-          }
-        }
+    try {
+      // Crear tarea con la URI local de la foto (sin intentar subirla a /images)
+      // La API acepta photoUri como string de la ubicación local
+      await createTodo({
+        title: task.title,
+        photoUri: task.photoUri, // Enviar URI local directamente
+        location: task.location,
+      });
 
-        // Cámara
-        const camStatus = await ImagePicker.getCameraPermissionsAsync();
-        if (mounted && camStatus.status !== ImagePicker.PermissionStatus.GRANTED) {
-          const requestedCam = await ImagePicker.requestCameraPermissionsAsync();
-          if (!requestedCam.granted) {
-            // Algunas versiones usan `canAskAgain` en la respuesta
-            if ((requestedCam as any).canAskAgain === false) {
-              Alert.alert(
-                'Permiso de cámara requerido',
-                'La aplicación necesita acceso a la cámara. Por favor, habilítalo en los ajustes.',
-                [
-                  { text: 'Abrir ajustes', onPress: () => Linking.openSettings() },
-                  { text: 'Cancelar', style: 'cancel' },
-                ]
-              );
-            }
-          }
-        }
-
-        // Calentar cache de ubicación (no bloqueante)
-        try {
-          await Location.getLastKnownPositionAsync();
-        } catch (e) {
-          /* ignore */
-        }
-      } catch (error) {
-        console.warn('Preload permissions failed:', error);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const handleCreateFromModal = async (
-    title: string,
-    uri: string,
-    coords: Location.LocationObjectCoords
-  ) => {
-    await createTodo(title, uri, coords);
-    router.back(); // cerramos modal
+      reload(); // Recargar lista de tareas
+      router.back(); // cerramos modal
+    } catch (error) {
+      console.error('Error al crear tarea:', error);
+      Alert.alert('Error', 'No se pudo crear la tarea. ' + (error instanceof Error ? error.message : ''));
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   return (

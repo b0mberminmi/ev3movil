@@ -2,10 +2,11 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity } from 'react-native';
-import { clearCurrentUser } from '../constants/auth';
+import { useAuth } from '../components/context/auth-context';
 
 export default function LogoutButton() {
   const router = useRouter();
+  const { logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -14,8 +15,8 @@ export default function LogoutButton() {
     setIsLoggingOut(true);
 
     try {
-      // Limpiar el AsyncStorage
-      await clearCurrentUser();
+      // Cerrar sesión usando el contexto
+      await logout();
       router.replace('/');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);

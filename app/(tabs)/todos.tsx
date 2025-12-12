@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import {
     ActivityIndicator,
@@ -12,27 +12,27 @@ import {
 
 import TodoItem from '../../components/TodoItem';
 import useTodos, { Todo } from '../../hooks/useTodos';
+import { useAuth } from '../../components/context/auth-context';
 
 const NEON_GREEN = '#00FF00';
 const BLACK = 'black';
 
 export default function TodosScreen() {
-  // Se obtiene email del usuario con los parámetros
-  const { userEmail } = useLocalSearchParams<{ userEmail?: string }>();
-  const emailString = userEmail ? String(userEmail) : '';
-
   const router = useRouter();
+  const { user } = useAuth();
+  const token = user?.token;
+  const emailString = user?.email ?? '';
 
-  // Se conecta al hook con el email ingresado
   const {
     todos,
     activeTodos,
     completedTodos,
+    count,
     isLoading,
     deleteTodo,
     toggleTodo,
     reload,
-  } = useTodos(emailString);
+  } = useTodos(token);
 
   const handleToggleRequest = (todo: Todo) => {
     toggleTodo(todo.id);
@@ -40,6 +40,16 @@ export default function TodosScreen() {
 
   const handleDeleteRequest = (todo: Todo) => {
     deleteTodo(todo.id);
+  };
+
+  const handleEditRequest = (todo: Todo) => {
+    router.push({
+      pathname: '/edit-modal',
+      params: {
+        id: todo.id,
+        title: todo.title,
+      },
+    });
   };
 
   // Recargar las tareas cada vez que la pantalla vuelve a estar en foco
@@ -53,7 +63,7 @@ export default function TodosScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mis tareas</Text>
+        <Text style={styles.headerTitle}>Mis tareas ({count})</Text>
         {emailString ? (
           <Text style={styles.headerSubtitle}>{emailString}</Text>
         ) : null}
@@ -87,6 +97,7 @@ export default function TodosScreen() {
               todo={item}
               onToggleRequest={handleToggleRequest}
               onDeleteRequest={handleDeleteRequest}
+              onEditRequest={handleEditRequest}
             />
           )}
           ListFooterComponent={
@@ -99,6 +110,7 @@ export default function TodosScreen() {
                       todo={todo}
                       onToggleRequest={handleToggleRequest}
                       onDeleteRequest={handleDeleteRequest}
+                      onEditRequest={handleEditRequest}
                     />
                   </View>
                 ))}
@@ -110,12 +122,7 @@ export default function TodosScreen() {
 
       <TouchableOpacity
         style={styles.fab}
-        onPress={() =>
-          router.push({
-            pathname: '/modal',
-            params: { userEmail: emailString },
-          })
-        }
+        onPress={() => router.push('/modal')}
       >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>

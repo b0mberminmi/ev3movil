@@ -1,38 +1,59 @@
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { authenticate, getCurrentUser, isValidEmail } from '../constants/auth';
+import { getCurrentUser, isValidEmail } from '../constants/auth';
 import { useAuth } from '../components/context/auth-context';
+import getTodoService from '../services/todo-services';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, isLoading } = useAuth();
-
+  const { login, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isLoadingTodos, setIsLoadingTodos] = useState(false);
 
-  // Se restaura sesión si ya hay un usuario registrado
+  const fetchTodos = useCallback(async () => {
+    if (!user) return;
+    setIsLoadingTodos(true);
+    try {
+      const todoService = getTodoService({ token: user.token });
+      const todosResponse = await todoService.getTodos();
+      console.log('Tareas precargadas:', todosResponse.count);
+      // Redirigir a la pantalla de todos después de cargar
+      router.replace('/(tabs)/todos');
+    } catch (err) {
+      console.error('Error al cargar tareas:', err);
+      Alert.alert(
+        'Error',
+        'No se pudieron cargar las tareas. Intenta nuevamente.'
+      );
+      // Aún así redirigir, las tareas se cargarán en la pantalla de todos
+      router.replace('/(tabs)/todos');
+    } finally {
+      setIsLoadingTodos(false);
+    }
+  }, [user, router]);
+
+  // Restaurar sesión si ya hay un usuario autenticado
   useEffect(() => {
     let isMounted = true;
 
     const restoreSession = async () => {
       try {
-        const user = await getCurrentUser();
-        if (user && user.email && isMounted) {
-          router.replace({
-            pathname: '/(tabs)/todos',
-            params: { userEmail: user.email },
-          });
+        const storedUser = await getCurrentUser();
+        if (storedUser && storedUser.token && isMounted) {
+          router.replace('/(tabs)/todos');
           return;
         }
       } catch (restoreError) {
@@ -50,6 +71,13 @@ export default function LoginScreen() {
       isMounted = false;
     };
   }, [router]);
+
+  // Cargar tareas cuando el usuario inicia sesión
+  useEffect(() => {
+    if (user && !isCheckingSession) {
+      fetchTodos();
+    }
+  }, [user, isCheckingSession, fetchTodos]);
 
   const handleLogin = async () => {
     setError('');
@@ -76,10 +104,7 @@ export default function LoginScreen() {
       }
 
       // Navegar a la pantalla de todos
-      router.replace({
-        pathname: '/(tabs)/todos',
-        params: { userEmail: email.trim().toLowerCase() },
-      });
+      router.replace('/(tabs)/todos');
     } catch (err) {
       console.error('Error al iniciar sesión:', err);
       setError((err as Error).message || 'No se pudo iniciar sesión. Intenta nuevamente.');
@@ -88,11 +113,13 @@ export default function LoginScreen() {
     }
   };
 
-  if (isCheckingSession) {
+  if (isCheckingSession || isLoadingTodos) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator color="#00ff00" size="large" />
-        <Text style={styles.loadingText}>Cargando sesión...</Text>
+        <Text style={styles.loadingText}>
+          {isLoadingTodos ? 'Cargando tareas...' : 'Cargando sesión...'}
+        </Text>
       </View>
     );
   }
@@ -135,6 +162,14 @@ export default function LoginScreen() {
         <Text style={styles.loginButtonText}>
           {isSubmitting ? 'Verificando...' : 'Iniciar Sesión'}
         </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.registerLink}
+        onPress={() => router.push('/register')}
+        disabled={isSubmitting}
+      >
+        <Text style={styles.registerLinkText}>¿No tienes cuenta? Registrate</Text>
       </TouchableOpacity>
     </View>
   );
@@ -195,5 +230,15 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     marginBottom: 15,
+  },
+  registerLink: {
+    marginTop: 20,
+    padding: 10,
+  },
+  registerLinkText: {
+    color: '#00ff00',
+    textAlign: 'center',
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });

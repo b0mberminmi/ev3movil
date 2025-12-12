@@ -1,18 +1,19 @@
-import { useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import useTodos from '../../hooks/useTodos';
+import { useAuth } from '../../components/context/auth-context';
 
 const NEON_GREEN = '#00FF00';
 const BLACK = 'black';
 const GRAY = '#AAAAAA';
 
 export default function ProfileScreen() {
-  const { userEmail } = useLocalSearchParams<{ userEmail?: string }>();
-  const emailString = userEmail ? String(userEmail) : '';
+  const { user } = useAuth();
+  const token = user?.token;
+  const emailString = user?.email ?? '';
 
-  const { todos, isLoading, reload } = useTodos(emailString);
+  const { todos, isLoading, reload } = useTodos(token);
 
   // Recargar resumen cuando la pantalla entra en foco (por ejemplo, después de borrar desde Tareas)
   useFocusEffect(
@@ -22,7 +23,7 @@ export default function ProfileScreen() {
   );
 
   const totalTodos = todos.length;
-  const completedTodos = todos.filter(t => t.isCompleted).length;
+  const completedTodos = todos.filter(t => t.completed).length;
   const pendingTodos = totalTodos - completedTodos;
 
   return (

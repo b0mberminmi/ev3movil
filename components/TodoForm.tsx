@@ -1,114 +1,84 @@
-import { FontAwesome } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
 import React, { useState } from 'react';
 import {
-    Alert,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
 } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
+import { launchCameraAsync, MediaTypeOptions } from 'expo-image-picker';
+import * as Location from 'expo-location';
 
 const NEON_GREEN = '#00FF00';
 const INACTIVE_NEON = '#006600';
 const BLACK = 'black';
 
+interface LocationCoords {
+  latitude: number;
+  longitude: number;
+}
+
 interface TodoFormProps {
-  onCreateTodo: (
-    title: string,
-    uri: string,
-    coords: Location.LocationObjectCoords
-  ) => Promise<void>;
+  onCreateTodo: (task: {
+    title: string;
+    photoUri?: string;
+    location?: LocationCoords;
+  }) => Promise<void>;
 }
 
 const TodoForm: React.FC<TodoFormProps> = ({ onCreateTodo }) => {
   const [title, setTitle] = useState('');
-  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [location, setLocation] = useState<LocationCoords | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-
-  const ensureCameraPermission = async () => {
-    const currentPermission = await ImagePicker.getCameraPermissionsAsync();
-
-    if (currentPermission.status === ImagePicker.PermissionStatus.GRANTED) {
-      return true;
-    }
-
-    const requested = await ImagePicker.requestCameraPermissionsAsync();
-
-    if (requested.status !== ImagePicker.PermissionStatus.GRANTED) {
-      Alert.alert(
-        'Permiso requerido',
-        'Necesitamos permiso de cámara para tomar una foto de la tarea.'
-      );
-      return false;
-    }
-
-    return true;
-  };
-
-  const ensureLocationPermission = async () => {
-    const currentPermission = await Location.getForegroundPermissionsAsync();
-
-    if (currentPermission.status === Location.PermissionStatus.GRANTED) {
-      return true;
-    }
-
-    const requested = await Location.requestForegroundPermissionsAsync();
-
-    if (requested.status !== Location.PermissionStatus.GRANTED) {
-      Alert.alert(
-        'Permiso de ubicación requerido',
-        'Necesitamos tu ubicación para asociarla a la tarea.'
-      );
-      return false;
-    }
-
-    return true;
-  };
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   const handlePickImage = async () => {
     try {
-      const hasPermission = await ensureCameraPermission();
-      if (!hasPermission) return;
+      const result = await launchCameraAsync({
+        mediaTypes: MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.3,
+      });
 
-      // `expo-image-picker` v17+ recomienda `ImagePicker.MediaType`,
-      // pero algunas versiones pueden no exponer `MediaType` (y usan MediaTypeOptions).
-      // Usamos un fallback en tiempo de ejecución para evitar errores si la propiedad no existe.
-      const mediaTypesCandidate =
-        (ImagePicker as any).MediaType?.Images ??
-        (ImagePicker as any).MediaTypeOptions?.Images;
-
-      const launchOptions: any = {
-        allowsEditing: false,
-        quality: 0.7,
-      };
-
-      // Solo incluir mediaTypes si el valor runtime es compatible (no un array de strings).
-      // Pasar un array de strings ('Images') provoca error de cast en Android.
-      if (mediaTypesCandidate !== undefined && !Array.isArray(mediaTypesCandidate)) {
-        launchOptions.mediaTypes = mediaTypesCandidate;
+      if (!result.canceled && result.assets[0]) {
+        setPhotoUri(result.assets[0].uri);
+        // Obtener ubicación después de capturar la foto
+        await handleGetLocation();
       }
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo acceder a la cámara');
+    }
+  };
 
-      const result = await ImagePicker.launchCameraAsync(launchOptions);
-
-      if (result.canceled) return;
-
-      const asset = result.assets[0];
-      if (!asset?.uri) {
-        Alert.alert('Error', 'No se pudo obtener la imagen seleccionada.');
+  const handleGetLocation = async () => {
+    setIsLoadingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permiso denegado', 'Se requiere permiso de ubicación');
+        setIsLoadingLocation(false);
         return;
       }
 
-      setSelectedImageUri(asset.uri);
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      setLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
     } catch (error) {
-      console.error('Error al tomar la foto:', error);
-      Alert.alert(
-        'Error',
-        'Ocurrió un problema al acceder a la cámara. Intenta nuevamente.'
-      );
+      console.error('Error obteniendo ubicación:', error);
+      Alert.alert('Error', 'No se pudo obtener la ubicación');
+    } finally {
+      setIsLoadingLocation(false);
     }
   };
 
@@ -121,44 +91,25 @@ const TodoForm: React.FC<TodoFormProps> = ({ onCreateTodo }) => {
       return;
     }
 
-    // Validación de foto
-    if (!selectedImageUri) {
-      Alert.alert(
-        'Foto requerida',
-        'Debes tomar una foto para asociarla a la tarea.'
-      );
-      return;
-    }
-
-    if (isCreating) return;
+    if (isCreating || isLoadingLocation) return;
 
     setIsCreating(true);
 
     try {
-      const hasLocationPermission = await ensureLocationPermission();
-      if (!hasLocationPermission) {
-        setIsCreating(false);
-        return;
-      }
-
-      // Intentamos usar una posición conocida en caché primero (rápido). Si no hay, pedimos
-      // la posición actual con menor precisión para reducir el tiempo de espera.
-      let location = await Location.getLastKnownPositionAsync();
-      if (!location) {
-        location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Low,
-        });
-      }
-
-      await onCreateTodo(trimmedTitle, selectedImageUri, location.coords);
+      await onCreateTodo({
+        title: trimmedTitle,
+        photoUri: photoUri || undefined,
+        location: location || undefined,
+      });
 
       setTitle('');
-      setSelectedImageUri(null);
+      setPhotoUri(null);
+      setLocation(null);
     } catch (error) {
       console.error('Error al crear la tarea:', error);
       Alert.alert(
         'Error de creación',
-        'Hubo un problema al guardar la tarea o la localización.'
+        'Hubo un problema al guardar la tarea.'
       );
     } finally {
       setIsCreating(false);
@@ -173,26 +124,66 @@ const TodoForm: React.FC<TodoFormProps> = ({ onCreateTodo }) => {
         placeholderTextColor={INACTIVE_NEON}
         value={title}
         onChangeText={setTitle}
+        editable={!isCreating}
       />
 
-      {selectedImageUri ? (
-        <View style={styles.imagePreviewContainer}>
-          <Image source={{ uri: selectedImageUri }} style={styles.imagePreview} />
-          <TouchableOpacity style={styles.retakeButton} onPress={handlePickImage}>
-            <Text style={styles.retakeText}>Cambiar foto</Text>
+      {photoUri && (
+        <View style={styles.photoContainer}>
+          <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+          <TouchableOpacity
+            onPress={() => setPhotoUri(null)}
+            style={styles.removePhotoButton}
+          >
+            <FontAwesome name="close" size={16} color={BLACK} />
           </TouchableOpacity>
         </View>
-      ) : (
-        <TouchableOpacity style={styles.imageButton} onPress={handlePickImage}>
-          <FontAwesome name="camera" size={20} color={NEON_GREEN} />
-          <Text style={styles.imageButtonText}>Tomar foto</Text>
+      )}
+
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={[styles.cameraButton, isCreating && styles.buttonDisabled]}
+          onPress={handlePickImage}
+          disabled={isCreating}
+        >
+          <FontAwesome
+            name="camera"
+            size={18}
+            color={isCreating ? INACTIVE_NEON : NEON_GREEN}
+          />
+          <Text
+            style={[
+              styles.cameraButtonText,
+              isCreating && styles.buttonTextDisabled,
+            ]}
+          >
+            Foto
+          </Text>
         </TouchableOpacity>
+
+        {location && (
+          <View style={styles.locationInfo}>
+            <FontAwesome name="map-marker" size={14} color={NEON_GREEN} />
+            <Text style={styles.locationInfoText}>
+              Lat: {location.latitude.toFixed(2)}, Lon: {location.longitude.toFixed(2)}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {isLoadingLocation && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={NEON_GREEN} />
+          <Text style={styles.loadingText}>Obteniendo ubicación...</Text>
+        </View>
       )}
 
       <TouchableOpacity
-        style={[styles.createButton, isCreating && styles.createButtonDisabled]}
+        style={[
+          styles.createButton,
+          (isCreating || isLoadingLocation) && styles.createButtonDisabled,
+        ]}
         onPress={handleCreateTodo}
-        disabled={isCreating}
+        disabled={isCreating || isLoadingLocation}
       >
         {isCreating ? (
           <Text style={styles.createButtonText}>Creando tarea...</Text>
@@ -216,41 +207,79 @@ const styles = StyleSheet.create({
     borderColor: NEON_GREEN,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     color: NEON_GREEN,
     marginBottom: 12,
   },
-  imageButton: {
+  photoContainer: {
+    position: 'relative',
+    marginBottom: 12,
+  },
+  photoPreview: {
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: NEON_GREEN,
+  },
+  removePhotoButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: NEON_GREEN,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
+  },
+  cameraButton: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: NEON_GREEN,
     borderRadius: 8,
-    padding: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  cameraButtonText: {
+    color: NEON_GREEN,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    borderColor: INACTIVE_NEON,
+  },
+  buttonTextDisabled: {
+    color: INACTIVE_NEON,
+  },
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    paddingHorizontal: 10,
+    gap: 6,
+  },
+  locationInfoText: {
+    fontSize: 12,
+    color: NEON_GREEN,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
+    gap: 8,
   },
-  imageButtonText: {
+  loadingText: {
     color: NEON_GREEN,
-    marginLeft: 8,
-    fontSize: 14,
-  },
-  imagePreviewContainer: {
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  imagePreview: {
-    width: '100%',
-    height: 180,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  retakeButton: {
-    padding: 5,
-  },
-  retakeText: {
-    color: NEON_GREEN,
-    fontSize: 14,
+    fontSize: 12,
   },
   createButton: {
     backgroundColor: NEON_GREEN,

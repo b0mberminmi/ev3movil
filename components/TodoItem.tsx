@@ -12,14 +12,16 @@ interface TodoItemProps {
   todo: Todo;
   onToggleRequest: (todo: Todo) => void;
   onDeleteRequest: (todo: Todo) => void;
+  onEditRequest?: (todo: Todo) => void;
 }
 
 const TodoItem: React.FC<TodoItemProps> = ({
   todo,
   onToggleRequest,
   onDeleteRequest,
+  onEditRequest,
 }) => {
-  const isCompleted = todo.isCompleted;
+  const isCompleted = todo.completed;
 
   return (
     <View
@@ -50,12 +52,34 @@ const TodoItem: React.FC<TodoItemProps> = ({
           {todo.title}
         </Text>
 
-        <Text style={styles.locationText}>
-          ({todo.latitude.toFixed(4)}, {todo.longitude.toFixed(4)})
+        {todo.photoUri ? (
+          <Image
+            source={{ uri: todo.photoUri }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        ) : null}
+
+        {todo.location ? (
+          <View style={styles.locationContainer}>
+            <FontAwesome name="map-marker" size={14} color={NEON_GREEN} />
+            <Text style={styles.locationText}>
+              Lat: {todo.location.latitude.toFixed(2)}, Lon: {todo.location.longitude.toFixed(2)}
+            </Text>
+          </View>
+        ) : null}
+
+        <Text style={styles.statusText}>
+          {isCompleted ? 'Completada' : 'Pendiente'}
         </Text>
       </View>
 
-      <Image source={{ uri: todo.photoUri }} style={styles.todoImage} />
+      <TouchableOpacity
+        onPress={() => onEditRequest?.(todo)}
+        style={styles.editButton}
+      >
+        <FontAwesome name="edit" size={20} color={NEON_GREEN} />
+      </TouchableOpacity>
 
       <TouchableOpacity
         onPress={() => onDeleteRequest(todo)}
@@ -101,7 +125,30 @@ const styles = StyleSheet.create({
     color: INACTIVE_NEON,
   },
 
+  image: {
+    width: '100%',
+    height: 120,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: NEON_GREEN,
+  },
+
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    marginBottom: 4,
+  },
+
   locationText: {
+    fontSize: 12,
+    color: NEON_GREEN,
+    marginLeft: 6,
+  },
+
+  statusText: {
     fontSize: 12,
     color: INACTIVE_NEON,
     marginTop: 2,
@@ -112,14 +159,11 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
 
-  todoImage: {
-    width: 55,
-    height: 55,
-    borderRadius: 4,
-    marginLeft: 10,
-    borderWidth: 1,
-    borderColor: NEON_GREEN,
+  editButton: {
+    padding: 5,
+    marginRight: 8,
   },
+
 });
 
 export default TodoItem;

@@ -1,23 +1,20 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Location from 'expo-location';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import getTodoService, { TodoApi } from '../services/todo-services';
 
 export interface Todo {
   id: string;
   title: string;
-  photoUri: string;
-  latitude: number;
-  longitude: number;
-  isCompleted: boolean;
-  userEmail: string;
+  completed: boolean;
+  photoUri?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
-const TODOS_STORAGE_KEY_PREFIX = '@MyApp:Todos';
-const getStorageKey = (email: string) =>
-  `${TODOS_STORAGE_KEY_PREFIX}:${email.trim().toLowerCase() || 'anon'}`;
-
-const useTodos = (currentEmail: string) => {
+const useTodos = (token: string | undefined) => {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [count, setCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const isMountedRef = useRef(true);
 
@@ -27,117 +24,144 @@ const useTodos = (currentEmail: string) => {
     };
   }, []);
 
-  const storageKey = useMemo(() => getStorageKey(currentEmail), [currentEmail]);
+  const mapTodo = (apiTodo: TodoApi): Todo => ({
+    id: apiTodo.id,
+    title: apiTodo.title,
+    completed: Boolean(apiTodo.completed),
+    photoUri: apiTodo.photoUri,
+    location: apiTodo.location,
+  });
 
   const loadTodos = useCallback(async () => {
+    if (!token) {
+      setTodos([]);
+      setIsLoading(false);
+      return;
+    }
+
+    const service = getTodoService({ token });
     try {
-      const storedTodos = await AsyncStorage.getItem(storageKey);
-      const parsed: Todo[] = storedTodos ? JSON.parse(storedTodos) : [];
+      const response = await service.getTodos();
+      const mapped = response.data?.map(mapTodo) ?? [];
       if (isMountedRef.current) {
-        setTodos(parsed);
+        setTodos(mapped);
+        setCount(response.count ?? mapped.length);
       }
     } catch (error) {
-      console.error('Error al cargar tareas: ', error);
+      console.error('Error al cargar tareas desde API:', error);
+      // En caso de error, mantener lista vacía en lugar de crash
+      if (isMountedRef.current) {
+        setTodos([]);
+        setCount(0);
+      }
     } finally {
       if (isMountedRef.current) {
         setIsLoading(false);
       }
     }
-  }, [storageKey]);
+  }, [token]);
 
   useEffect(() => {
     setIsLoading(true);
     loadTodos();
   }, [loadTodos]);
 
-  // Permite recargar explícitamente al cerrar la modal
+  // Permite recargar explícitamente
   const reload = useCallback(() => {
     setIsLoading(true);
     loadTodos();
   }, [loadTodos]);
 
-  const persistTodos = useCallback(
-    async (nextTodos: Todo[]) => {
+  const createTodo = useCallback(
+    async (task: { title: string; description?: string }) => {
+      if (!token) return;
+      const service = getTodoService({ token });
       try {
-        await AsyncStorage.setItem(storageKey, JSON.stringify(nextTodos));
+        const created = await service.createTodo(task);
+        const mapped = mapTodo(created);
+        setTodos(prev => [...prev, mapped]);
+        setCount(prev => prev + 1);
       } catch (error) {
-        console.error('Error al guardar tareas: ', error);
+        console.error('Error al crear tarea:', error);
+        throw error;
       }
     },
-    [storageKey]
+    [token]
   );
 
-  // Crear
-  const createTodo = useCallback(
-    async (
-      title: string,
-      photoUri: string,
-      location: Location.LocationObjectCoords
-    ) => {
-      const newTodo: Todo = {
-        id: Date.now().toString(),
-        title,
-        photoUri,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        isCompleted: false,
-        userEmail: currentEmail,
-      };
-
-      setTodos(prevTodos => {
-        const next = [...prevTodos, newTodo];
-        persistTodos(next);
-        return next;
-      });
-    },
-    [currentEmail, persistTodos]
-  );
-
-  // Borrar
   const deleteTodo = useCallback(
     async (id: string) => {
-      setTodos(prevTodos => {
-        const next = prevTodos.filter(todo => todo.id !== id);
-        persistTodos(next);
-        return next;
-      });
+      if (!token) return;
+      const service = getTodoService({ token });
+      try {
+        await service.deleteTodo(id);
+        setTodos(prev => prev.filter(t => t.id !== id));
+      } catch (error) {
+        console.error('Error al eliminar tarea:', error);
+        throw error;
+      }
     },
-    [persistTodos]
+    [token]
   );
 
-  // Marcar / desmarcar
   const toggleTodo = useCallback(
     async (id: string) => {
-      setTodos(prevTodos => {
-        const next = prevTodos.map(todo =>
-          todo.id === id ? { ...todo, isCompleted: !todo.isCompleted } : todo
-        );
-        persistTodos(next);
-        return next;
-      });
+      if (!token) return;
+      const current = todos.find(t => t.id === id);
+      if (!current) return;
+
+      const service = getTodoService({ token });
+      try {
+        const updated = await service.toggleTodo(id, !current.completed);
+        const mapped = mapTodo(updated);
+        setTodos(prev => prev.map(t => (t.id === id ? mapped : t)));
+      } catch (error) {
+        console.error('Error al actualizar tarea:', error);
+        throw error;
+      }
     },
-    [persistTodos]
+    [token, todos]
   );
 
-  // Apartados: activas y completadas
-  const activeTodos = useMemo(
-    () => todos.filter(t => !t.isCompleted),
-    [todos]
+  const updateTodo = useCallback(
+    async (id: string, updates: Partial<{ title: string; photoUri?: string; location?: Todo['location'] }>) => {
+      if (!token) return;
+      const current = todos.find(t => t.id === id);
+      if (!current) return;
+
+      const service = getTodoService({ token });
+      try {
+        // Combinar datos actuales con los cambios
+        const updatedTask = {
+          title: updates.title ?? current.title,
+          photoUri: updates.photoUri ?? current.photoUri,
+          location: updates.location ?? current.location,
+        };
+
+        const updated = await service.updateTodo(id, updatedTask);
+        const mapped = mapTodo(updated);
+        setTodos(prev => prev.map(t => (t.id === id ? mapped : t)));
+      } catch (error) {
+        console.error('Error al actualizar tarea:', error);
+        throw error;
+      }
+    },
+    [token, todos]
   );
 
-  const completedTodos = useMemo(
-    () => todos.filter(t => t.isCompleted),
-    [todos]
-  );
+  const activeTodos = useMemo(() => todos.filter(t => !t.completed), [todos]);
+  const completedTodos = useMemo(() => todos.filter(t => t.completed), [todos]);
 
   return {
     todos,
     activeTodos,
     completedTodos,
+    count,
     isLoading,
     createTodo,
     deleteTodo,
     toggleTodo,
+    updateTodo,
     reload,
   };
 };

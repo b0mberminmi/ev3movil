@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authenticate, getCurrentUser, clearCurrentUser, AuthUser } from '../../constants/auth';
+import { getCurrentUser, clearCurrentUser, AuthUser } from '../../constants/auth';
 import getAuthService from '@/services/auth-services';
 import { Alert } from 'react-native';
+import { decodeJwt } from 'jose'
 
-export interface User {
-  id: string;
+export interface JwtPayload {
+  sub: string;
   email: string;
-  token: string;
 }
 
 interface AuthContextType {
@@ -23,6 +23,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+
+  // Guardar sesión en AsyncStorage
+  const saveSessionToStorage = async (userData: AuthUser): Promise<void> => {
+    try {
+      await AsyncStorage.setItem('@MyApp:CurrentUser', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Error al guardar sesión:', error);
+    }
+  };
 
   useEffect(() => {
     const loadUser = async () => {
@@ -43,11 +52,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       
       if (loginResponse.data?.token) {
         const token = loginResponse.data.token;
+        const decodedToken = decodeJwt<JwtPayload>(token);
+
+        const loggedInUser: AuthUser = {
+          id: decodedToken.sub,
+          email: decodedToken.email,
+          token: token,
+        };
+
+
         console.log('Token recibido:', token);
         
         // Guardar usuario
-        setUser({ email });
-        await AsyncStorage.setItem('@MyApp:CurrentUser', JSON.stringify({ email }));
+        setUser(loggedInUser);
+        await saveSessionToStorage(loggedInUser);
         
         Alert.alert('Login exitoso');
         return true;
@@ -70,16 +88,30 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   };
 
   const register = async (email: string, password: string): Promise<boolean> => {
+    const authClient = getAuthService();
     setLoading(true);
     try {
-      const isValid = await authenticate(email, password);
-      if (isValid) {
-        setUser({ email });
+      const response = await authClient.register({ email, password });
+      if (response.data?.token) {
+        const token = response.data.token;
+        const decodedToken = decodeJwt<JwtPayload>(token);
+
+        const registeredUser: AuthUser = {
+          id: decodedToken.sub,
+          email: decodedToken.email,
+          token: token,
+        };
+
+        setUser(registeredUser);
+        await saveSessionToStorage(registeredUser);
+        Alert.alert('Registro exitoso');
         return true;
       }
+      Alert.alert('Error', 'No se pudo completar el registro');
       return false;
     } catch (error) {
       console.error('Error en registro:', error);
+      Alert.alert('Error en registro', (error as Error).message);
       return false;
     } finally {
       setLoading(false);
