@@ -19,6 +19,7 @@ Proyecto creado como parte de la Evaluación 3 del curso de Desarrollo de Aplica
 - **Perfil de usuario**: Resumen de tareas totales, completadas y pendientes.
 - **Interfaz con navegación por pestañas** (tabs): Tareas y Perfil.
 - **Persistencia de sesión**: Mantiene el usuario logueado entre sesiones.
+- **Manejo robusto de errores HTTP**: Mensajes en español para 400-401-403-404-409-422-500-502-503-504, con validación previa (email, contraseña 6+) y logs diferenciados (warn para validación, info para éxito).
 - **Context API** para gestión de estado de autenticación.
 - **Componentes reutilizables** y hooks personalizados.
 - **Cliente HTTP con Axios** para comunicación con la API externa.
@@ -41,12 +42,14 @@ O usa credenciales existentes si ya las tienes registradas en el sistema.
 - **React** 19.1.0
 - **TypeScript** (strict mode)
 - **Axios** (cliente HTTP para la API)
+- **Axios interceptors + manejo de errores** (ApiError + mapping de códigos HTTP)
 - **Context API** (gestión de estado)
 - **React Router** (expo-router v6)
 - **AsyncStorage** (persistencia de sesión)
 - **jose** (decodificación de JWT)
 - **expo-image-picker** (captura de fotos)
 - **expo-location** (coordenadas GPS)
+- **expo-module-scripts** (soporte de tsconfig en módulos Expo)
 - **FontAwesome Icons** (interfaz visual)
 
 ## Requisitos
@@ -88,6 +91,8 @@ npx expo start
 - Registro de nuevos usuarios
 - Persistencia automática de sesión
 - Cierre de sesión (logout)
+ - Validación local de email y contraseña (6+ caracteres) antes de llamar a la API
+ - Si el usuario no existe, regístrate primero desde la app
 
 ### Gestión de Tareas
 - Crear tareas con título, foto y ubicación
@@ -96,6 +101,12 @@ npx expo start
 - Eliminar tareas
 - Ver tareas activas y completadas
 - Mostrar contador de tareas
+
+### Manejo de errores y validaciones
+- Mensajes claros en español para códigos 400, 401, 403, 404, 409, 422, 500, 502, 503, 504
+- Validación previa en cliente (email válido, contraseña mínima de 6) para evitar llamadas inválidas
+- Logs diferenciados: advertencias para validaciones, info para éxito
+- Tiempo de espera de 10s en peticiones HTTP
 
 ### Perfil de Usuario
 - Ver email del usuario logueado
@@ -111,48 +122,40 @@ npx expo start
 ## Estructura principal del proyecto
 
 ```
-app/
-├── index.tsx              # Pantalla de login
-├── register.tsx           # Pantalla de registro
-├── modal.tsx              # Modal para crear tareas
-├── edit-modal.tsx         # Modal para editar tareas
-├── _layout.tsx            # Layout raíz con AuthProvider
-├── LogoutButton.tsx       # Botón de cierre de sesión
-└── (tabs)/
-    ├── _layout.tsx        # Layout de tabs
-    ├── todos.tsx          # Pantalla de lista de tareas
-    └── profile.tsx        # Pantalla de perfil
+app/                # Pantallas y navegación (Expo Router)
+    _layout.tsx
+    index.tsx         # Login
+    register.tsx      # Registro
+    modal.tsx         # Crear tarea (foto+ubicación)
+    edit-modal.tsx    # Editar tarea
+    (tabs)/           # Tabs: tareas y perfil
 
-components/
-├── TodoItem.tsx           # Componente individual de tarea
-├── TodoForm.tsx           # Formulario para crear/editar tareas
-├── EditScreenInfo.tsx
-├── StyledText.tsx
-├── Themed.tsx
-└── context/
-    └── auth-context.tsx   # Context de autenticación
+components/         # UI y utilidades
+    TodoForm.tsx
+    TodoItem.tsx
+    context/auth-context.tsx
 
-services/
-├── auth-services.ts       # API de autenticación
-├── todo-services.ts       # API de tareas
-└── image-services.ts      # API de carga de imágenes
+services/           # Clientes HTTP
+    auth-services.ts
+    todo-services.ts
 
 hooks/
-└── useTodos.ts            # Hook para gestión de tareas
+    useTodos.ts
+
+utils/
+    error-handler.ts
 
 constants/
-├── auth.ts                # Lógica de autenticación
-├── config.ts              # Variables de entorno
-└── Colors.ts              # Paleta de colores
+    auth.ts
+    config.ts
 
 assets/
-├── fonts/
-└── images/
+    images/
 
-package.json              # Dependencias y scripts
-tsconfig.json             # Configuración de TypeScript
-.env.local                # Variables de entorno (local)
-README.md                 # Este archivo
+package.json
+tsconfig.json
+.env.local (local)
+README.md
 ```
 
 ## Endpoints de la API
