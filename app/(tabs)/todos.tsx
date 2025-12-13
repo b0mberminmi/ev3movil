@@ -39,7 +39,21 @@ export default function TodosScreen() {
   };
 
   const handleDeleteRequest = (todo: Todo) => {
-    deleteTodo(todo.id);
+    Alert.alert(
+    "Confirmar eliminación",
+    `¿Seguro que quieres eliminar la tarea"?`,
+    [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Eliminar",
+        style: "destructive",
+        onPress: () => deleteTodo(todo.id),
+      },
+    ]
+  );
   };
 
   const handleEditRequest = (todo: Todo) => {
