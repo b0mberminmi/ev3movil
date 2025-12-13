@@ -12,6 +12,14 @@ export class ApiError extends Error {
 }
 
 /**
+ * Valida formato de email
+ */
+export const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim());
+};
+
+/**
  * Mapea códigos de estado HTTP a mensajes descriptivos
  */
 export const getErrorMessage = (status: number, context?: string): string => {
@@ -47,15 +55,36 @@ export const getErrorMessage = (status: number, context?: string): string => {
 export const handleAxiosError = (error: unknown, context?: string): ApiError => {
   if (axios.isAxiosError(error)) {
     const status = error.response?.status || 0;
-    const message = getErrorMessage(status, context);
+    let serverMessage = '';
 
     // Intenta extraer mensaje detallado del servidor
-    const serverMessage =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message;
+    if (error.response?.data?.error) {
+      // Error de Zod validation
+      if (typeof error.response.data.error.message === 'string') {
+        try {
+          const parsed = JSON.parse(error.response.data.error.message);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            serverMessage = parsed[0].message || error.response.data.error.message;
+          }
+        } catch {
+          serverMessage = error.response.data.error.message;
+        }
+      } else {
+        serverMessage = String(error.response.data.error);
+      }
+    } else {
+      serverMessage =
+        error.response?.data?.message ||
+        error.response?.data?.msg ||
+        error.message;
+    }
 
-    return new ApiError(status, message, serverMessage);
+    const message = getErrorMessage(status, context);
+
+    // Log como warn en lugar de error (son errores esperados del flujo de app)
+    console.warn(`⚠️ HTTP ${status}: ${serverMessage || message}`);
+
+    return new ApiError(status, message, serverMessage as string);
   }
 
   if (error instanceof Error) {

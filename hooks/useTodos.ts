@@ -79,7 +79,15 @@ const useTodos = (token: string | undefined) => {
   }, [loadTodos]);
 
   const createTodo = useCallback(
-    async (task: { title: string; description?: string }) => {
+    async (task: { 
+      title: string; 
+      description?: string;
+      photoUri?: string;
+      location?: {
+        latitude: number;
+        longitude: number;
+      };
+    }) => {
       if (!token) return;
       const service = getTodoService({ token });
       try {

@@ -60,22 +60,25 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           token: token,
         };
 
-        console.log('Token recibido:', token);
+        console.log('✅ Token recibido y usuario autenticado');
         
         // Guardar usuario
         setUser(loggedInUser);
         await saveSessionToStorage(loggedInUser);
         
-        Alert.alert('Login exitoso', 'Bienvenido ' + decodedToken.email);
+        Alert.alert('✅ Login exitoso', 'Bienvenido ' + decodedToken.email);
         return true;
       }
       
       Alert.alert('Error', 'Credenciales inválidas');
       return false;
     } catch (error) {
-      console.error('Error en login:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      Alert.alert('Error al iniciar sesión', errorMessage);
+      
+      // Loguear como warning (son errores esperados del flujo de app)
+      console.warn(`⚠️ Login: ${errorMessage}`);
+      
+      Alert.alert('Validación requerida', errorMessage);
       return false;
     } finally {
       setLoading(false);
@@ -110,8 +113,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       Alert.alert('Error', 'No se pudo completar el registro');
       return false;
     } catch (error) {
-      console.error('Error en registro:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      
+      // Loguear como warning (son errores esperados del flujo de app)
+      console.warn(`⚠️ Registro: ${errorMessage}`);
+      
       Alert.alert('Error al registrarse', errorMessage);
       return false;
     } finally {
