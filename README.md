@@ -167,7 +167,7 @@ README.md                 # Este archivo
 - `PATCH /todos/:id` - Actualizar tarea
 - `DELETE /todos/:id` - Eliminar tarea
 
-### Demostración del uso de la API
+## Demostración del uso de la API
 
 A continuación se mostraran algunas capturas del consumo de los diferentes endpoints de la api en la 
 plataforma de Swagger, junto con sus resultados en nuestra aplicación propiamente tal. Para ello se
