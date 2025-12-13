@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
 import TodoForm from '../components/TodoForm';
 import useTodos from '../hooks/useTodos';
@@ -19,7 +19,14 @@ export default function ModalScreen() {
   const { user } = useAuth();
   const token = user?.token;
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const { createTodo, reload } = useTodos(token);
+  const { createTodo, error, reload } = useTodos(token);
+
+  // Mostrar errores cuando ocurren
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+    }
+  }, [error]);
 
   const handleCreateFromModal = async (task: {
     title: string;
@@ -44,9 +51,9 @@ export default function ModalScreen() {
 
       reload(); // Recargar lista de tareas
       router.back(); // cerramos modal
-    } catch (error) {
-      console.error('Error al crear tarea:', error);
-      Alert.alert('Error', 'No se pudo crear la tarea. ' + (error instanceof Error ? error.message : ''));
+    } catch (err) {
+      console.error('Error al crear tarea:', err);
+      Alert.alert('Error al crear tarea', err instanceof Error ? err.message : 'No se pudo crear la tarea');
     } finally {
       setIsUploadingImage(false);
     }

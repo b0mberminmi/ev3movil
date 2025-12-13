@@ -60,14 +60,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           token: token,
         };
 
-
         console.log('Token recibido:', token);
         
         // Guardar usuario
         setUser(loggedInUser);
         await saveSessionToStorage(loggedInUser);
         
-        Alert.alert('Login exitoso');
+        Alert.alert('Login exitoso', 'Bienvenido ' + decodedToken.email);
         return true;
       }
       
@@ -75,7 +74,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       return false;
     } catch (error) {
       console.error('Error en login:', error);
-      Alert.alert('Error en login', (error as Error).message);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      Alert.alert('Error al iniciar sesión', errorMessage);
       return false;
     } finally {
       setLoading(false);
@@ -104,14 +104,15 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
         setUser(registeredUser);
         await saveSessionToStorage(registeredUser);
-        Alert.alert('Registro exitoso');
+        Alert.alert('Registro exitoso', 'Tu cuenta ha sido creada. ¡Bienvenido!');
         return true;
       }
       Alert.alert('Error', 'No se pudo completar el registro');
       return false;
     } catch (error) {
       console.error('Error en registro:', error);
-      Alert.alert('Error en registro', (error as Error).message);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      Alert.alert('Error al registrarse', errorMessage);
       return false;
     } finally {
       setLoading(false);

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Alert,
   StyleSheet,
@@ -19,7 +19,14 @@ export default function EditModalScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const token = user?.token;
-  const { updateTodo } = useTodos(token);
+  const { updateTodo, error } = useTodos(token);
+
+  // Mostrar errores cuando ocurren
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+    }
+  }, [error]);
 
   const { id, title: initialTitle } = useLocalSearchParams<{
     id: string;
@@ -46,10 +53,11 @@ export default function EditModalScreen() {
 
     try {
       await updateTodo(id, { title: trimmedTitle });
+      Alert.alert('Éxito', 'Tarea actualizada correctamente');
       router.back();
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar la tarea');
-      console.error('Error actualizando tarea:', error);
+    } catch (err) {
+      Alert.alert('Error al actualizar', err instanceof Error ? err.message : 'No se pudo actualizar la tarea');
+      console.error('Error actualizando tarea:', err);
     } finally {
       setIsUpdating(false);
     }

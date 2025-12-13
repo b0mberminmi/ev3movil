@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import getTodoService, { TodoApi } from '../services/todo-services';
+import { ApiError } from '../utils/error-handler';
 
 export interface Todo {
   id: string;
@@ -16,6 +17,7 @@ const useTodos = (token: string | undefined) => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [count, setCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -35,10 +37,12 @@ const useTodos = (token: string | undefined) => {
   const loadTodos = useCallback(async () => {
     if (!token) {
       setTodos([]);
+      setError(null);
       setIsLoading(false);
       return;
     }
 
+    setError(null);
     const service = getTodoService({ token });
     try {
       const response = await service.getTodos();
@@ -48,9 +52,10 @@ const useTodos = (token: string | undefined) => {
         setCount(response.count ?? mapped.length);
       }
     } catch (error) {
-      console.error('Error al cargar tareas desde API:', error);
-      // En caso de error, mantener lista vacía en lugar de crash
+      const errorMsg = error instanceof ApiError ? error.message : 'Error desconocido al cargar tareas';
+      console.error('Error al cargar tareas desde API:', errorMsg);
       if (isMountedRef.current) {
+        setError(errorMsg);
         setTodos([]);
         setCount(0);
       }
@@ -69,6 +74,7 @@ const useTodos = (token: string | undefined) => {
   // Permite recargar explícitamente
   const reload = useCallback(() => {
     setIsLoading(true);
+    setError(null);
     loadTodos();
   }, [loadTodos]);
 
@@ -77,12 +83,15 @@ const useTodos = (token: string | undefined) => {
       if (!token) return;
       const service = getTodoService({ token });
       try {
+        setError(null);
         const created = await service.createTodo(task);
         const mapped = mapTodo(created);
         setTodos(prev => [...prev, mapped]);
         setCount(prev => prev + 1);
       } catch (error) {
-        console.error('Error al crear tarea:', error);
+        const errorMsg = error instanceof ApiError ? error.message : 'Error al crear tarea';
+        console.error('Error al crear tarea:', errorMsg);
+        setError(errorMsg);
         throw error;
       }
     },
@@ -94,11 +103,14 @@ const useTodos = (token: string | undefined) => {
       if (!token) return;
       const service = getTodoService({ token });
       try {
+        setError(null);
         await service.deleteTodo(id);
-          setTodos(prev => prev.filter(t => t.id !== id));
-          setCount(prev => Math.max(0, prev - 1));
+        setTodos(prev => prev.filter(t => t.id !== id));
+        setCount(prev => Math.max(0, prev - 1));
       } catch (error) {
-        console.error('Error al eliminar tarea:', error);
+        const errorMsg = error instanceof ApiError ? error.message : 'Error al eliminar tarea';
+        console.error('Error al eliminar tarea:', errorMsg);
+        setError(errorMsg);
         throw error;
       }
     },
@@ -113,11 +125,14 @@ const useTodos = (token: string | undefined) => {
 
       const service = getTodoService({ token });
       try {
+        setError(null);
         const updated = await service.toggleTodo(id, !current.completed);
         const mapped = mapTodo(updated);
         setTodos(prev => prev.map(t => (t.id === id ? mapped : t)));
       } catch (error) {
-        console.error('Error al actualizar tarea:', error);
+        const errorMsg = error instanceof ApiError ? error.message : 'Error al actualizar tarea';
+        console.error('Error al actualizar tarea:', errorMsg);
+        setError(errorMsg);
         throw error;
       }
     },
@@ -132,6 +147,7 @@ const useTodos = (token: string | undefined) => {
 
       const service = getTodoService({ token });
       try {
+        setError(null);
         // Combinar datos actuales con los cambios
         const updatedTask = {
           title: updates.title ?? current.title,
@@ -143,7 +159,9 @@ const useTodos = (token: string | undefined) => {
         const mapped = mapTodo(updated);
         setTodos(prev => prev.map(t => (t.id === id ? mapped : t)));
       } catch (error) {
-        console.error('Error al actualizar tarea:', error);
+        const errorMsg = error instanceof ApiError ? error.message : 'Error al actualizar tarea';
+        console.error('Error al actualizar tarea:', errorMsg);
+        setError(errorMsg);
         throw error;
       }
     },
@@ -159,6 +177,7 @@ const useTodos = (token: string | undefined) => {
     completedTodos,
     count,
     isLoading,
+    error,
     createTodo,
     deleteTodo,
     toggleTodo,

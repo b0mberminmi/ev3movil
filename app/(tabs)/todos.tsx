@@ -30,13 +30,23 @@ export default function TodosScreen() {
     completedTodos,
     count,
     isLoading,
+    error,
     deleteTodo,
     toggleTodo,
     reload,
   } = useTodos(token);
 
+  // Mostrar errores cuando ocurren
+  React.useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+    }
+  }, [error]);
+
   const handleToggleRequest = (todo: Todo) => {
-    toggleTodo(todo.id);
+    toggleTodo(todo.id).catch((err) => {
+      Alert.alert('Error', err instanceof Error ? err.message : 'No se pudo actualizar la tarea');
+    });
   };
 
   const handleDeleteRequest = (todo: Todo) => {
@@ -51,7 +61,11 @@ export default function TodosScreen() {
       {
         text: "Eliminar",
         style: "destructive",
-        onPress: () => deleteTodo(todo.id),
+        onPress: () => {
+          deleteTodo(todo.id).catch((err) => {
+            Alert.alert('Error', err instanceof Error ? err.message : 'No se pudo eliminar la tarea');
+          });
+        },
       },
     ]
   );
