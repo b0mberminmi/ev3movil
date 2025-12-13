@@ -167,18 +167,66 @@ README.md                 # Este archivo
 - `PATCH /todos/:id` - Actualizar tarea
 - `DELETE /todos/:id` - Eliminar tarea
 
-### Demostración
+### Demostración del uso de la API
+
 A continuación se mostraran algunas capturas del consumo de los diferentes endpoints de la api en la 
-plataforma de Swagger, junto con sus resultados en nuestra aplicación propiamente tal.
+plataforma de Swagger, junto con sus resultados en nuestra aplicación propiamente tal. Para ello se
+utilizaron las siguiente credenciales: usuario: probando@mail.com  contraseña: password123
 
 ![Metodo get](/assets/images/get-pc.png)
 
 Aquí podemos apreciar el uso del método GET del endpoint /todos, el cual fue correctamente ejecutado y nos dio como respuesta
 una sola tarea que es la que teníamos hasta ese momento luego de grabar el vídeo.
 
-![Resultado aplicacion metodo GET](/assets/images/get-cel.png)
+![Resultado aplicacion metodo GET](/assets/images/get-cel.jpeg)
+Esta es la única tarea que había hasta ese momento, vista desde la aplicación misma
 
+Ahora, en la siguiente imagen podemos ver el llamado al método POST en /todos también para crear una nueva tarea desde el mismo Swagger.
+Esta tarea fue generada con una imagen sacada de internet al igual que la anterior y nos podemos dar cuenta fácilmente de que la respuesta 
+fue éxitosa (201), que se le asignó su ID y se registró la fecha y hora de la creación.
 
+![Metodo post](/assets/images/post-pc.png)
+
+A continuación, en la siguiente imagen, se verá el resultado de la creación de esta nueva tarea pero ahora desde la
+vista de la misma aplicación, podemos fijarnos de que el nombre es el mismo que en Swagger y si somos más
+meticulosos, podemos además copiar la url de la imagen, abrirla en nuestro navegador y cerciorarnos de que ambas
+coinciden.
+
+![Metodo post resultado aplicacion](/assets/images/post-cel.jpeg)
+
+Ahora continuamos con la demostración del método PATCH, el cual en este caso lo usamos para actualizar el título
+de la tarea. Dentro de nuestra misma app este método se utiliza para actualizar el mismo título como tal o 
+también el estado de ésta, entre pendiente y completada.
+
+![Metodo patch](/assets/images/patch-pc.png)
+
+Y en la siguiente imagen podemos apreciar desde dentro de nuestra aplicación que el título de la tarea
+se actualizó correctamente, no solo por ver que coinciden, sino que además porque en la plataforma Swagger
+la respuesta a la petición fue exitosa.
+
+![Metodo patch resultado aplicacion](/assets/images/patch-cel.jpeg)
+
+Por último, dentro de esta pequeña demostración le dimos cabida al consumo o uso del método DELETE, para el cual
+creamos especialmente esta nueva tarea. Para ello requerimos ingresar el ID de la tarea correspondiente a eliminar,
+al igual que lo hicimos con el método PATCH.
+
+![Metodo get para delete](/assets/images/delete1-pc.png)
+(Aquí se ven los datos de la nueva tarea que creamos para eliminar)
+
+![aplicación previa a delete](/assets/images/delete1-cel.jpeg)
+(Y aquí podemos observar la tarea dentro de la app previo a ser eliminada)
+
+![Metodo delete](/assets/images/delete2-pc.png)
+(En esta imagen vemos que colocamos el id correspondiente a la tarea mencionada, y que la respuesta a la petición fue exitosa)
+
+![Aplicación post método delete](/assets/images/delete2-cel.jpeg)
+(Finalmente, luego del consumo de este método, la app vuelve a estar igual solo con sus dos tareas previas)
+
+Esta fue una pequeña demostración con algunos endpoints del uso y conexión entre la API y nuestra propia Aplicación, pero esta vez desde un
+punto de vista inverso por decirlo así, ya que las peticiones se realizaron desde Swagger y se reflejaron en la vista de la app.
+De igual manera, si gustan son libres de probar su funcionamiento desde la misma aplicación y verán que los resultados se veran
+reflejados igualmente, para ello solo deberán autenticarse con las credenciales indicadas más arriba, obtener así el Token
+y ya solo les quedaría ir probando cada endpoint.
 
 ## Uso de IA
 
