@@ -169,9 +169,17 @@ README.md                 # Este archivo
 
 ### Demostración
 A continuación se mostraran algunas capturas del consumo de los diferentes endpoints de la api en la 
-plataforma de Swagger, junto con sus resultados en nuesgtra aplicación propiamente tal.
+plataforma de Swagger, junto con sus resultados en nuestra aplicación propiamente tal.
 
 ![Metodo get](/assets/images/get-pc.png)
+
+Aquí podemos apreciar el uso del método GET del endpoint /todos, el cual fue correctamente ejecutado y nos dio como respuesta
+una sola tarea que es la que teníamos hasta ese momento luego de grabar el vídeo.
+
+![Resultado aplicacion metodo GET](/assets/images/get-cel.png)
+
+
+
 ## Uso de IA
 
 Durante el desarrollo se utilizó **GitHub Copilot** como herramienta de apoyo para:
