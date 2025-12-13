@@ -95,7 +95,8 @@ const useTodos = (token: string | undefined) => {
       const service = getTodoService({ token });
       try {
         await service.deleteTodo(id);
-        setTodos(prev => prev.filter(t => t.id !== id));
+          setTodos(prev => prev.filter(t => t.id !== id));
+          setCount(prev => Math.max(0, prev - 1));
       } catch (error) {
         console.error('Error al eliminar tarea:', error);
         throw error;
