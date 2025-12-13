@@ -46,7 +46,9 @@ const TodoForm: React.FC<TodoFormProps> = ({ onCreateTodo }) => {
         quality: 0.3,
       });
 
+
       if (!result.canceled && result.assets[0]) {
+        const photoAsBlob = await fetch(result.assets[0].uri).then(res => res.blob());
         setPhotoUri(result.assets[0].uri);
         // Obtener ubicación después de capturar la foto
         await handleGetLocation();
