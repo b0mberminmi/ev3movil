@@ -220,7 +220,7 @@ al igual que lo hicimos con el método PATCH.
 <img src="/assets/images/delete1-cel.jpeg" width="450px" height="750px">
 (Y aquí podemos observar la tarea dentro de la app previo a ser eliminada)
 
-![Metodo delete](/assets/images/delete2-pc.png)
+![Metodo delete](/assets/images/delet2-pc.png)
 (En esta imagen vemos que colocamos el id correspondiente a la tarea mencionada, y que la respuesta a la petición fue exitosa)
 
 <img src="/assets/images/delete2-cel.jpeg" width="450px" height="750px">
