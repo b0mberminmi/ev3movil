@@ -3,6 +3,11 @@
 Aplicación de lista de tareas (TODO) desarrollada con React Native + Expo y TypeScript que se conecta a una API backend externa. Implementa gestión completa de tareas con captura de fotos, ubicación GPS, edición de tareas y autenticación de usuarios.
 Proyecto creado como parte de la Evaluación 3 del curso de Desarrollo de Aplicaciones Móviles.
 
+# Video Explicativo
+
+- [Ver video explicativo en YouTube](https://youtu.be/StnTmLiDNwM?si=4MjswExMO4bPt1Fw)
+
+
 ## Características
 
 - **Autenticación con API backend**: Login y registro de nuevos usuarios contra servidor externo con JWT.
