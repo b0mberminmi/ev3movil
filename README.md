@@ -179,7 +179,8 @@ utilizaron las siguiente credenciales: usuario: probando@mail.com  contraseña: 
 Aquí podemos apreciar el uso del método GET del endpoint /todos, el cual fue correctamente ejecutado y nos dio como respuesta
 una sola tarea que es la que teníamos hasta ese momento luego de grabar el vídeo.
 
-![Resultado aplicacion metodo GET](/assets/images/get-cel.jpeg)
+<img src="/assets/images/get-cel.jpeg" width="900px">
+
 Esta es la única tarea que había hasta ese momento, vista desde la aplicación misma
 
 Ahora, en la siguiente imagen podemos ver el llamado al método POST en /todos también para crear una nueva tarea desde el mismo Swagger.
