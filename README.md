@@ -179,7 +179,7 @@ utilizaron las siguiente credenciales: usuario: probando@mail.com  contraseña: 
 Aquí podemos apreciar el uso del método GET del endpoint /todos, el cual fue correctamente ejecutado y nos dio como respuesta
 una sola tarea que es la que teníamos hasta ese momento luego de grabar el vídeo.
 
-<img src="/assets/images/get-cel.jpeg" width="900px">
+<img src="/assets/images/get-cel.jpeg" width="450px">
 
 Esta es la única tarea que había hasta ese momento, vista desde la aplicación misma
 
