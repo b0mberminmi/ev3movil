@@ -173,7 +173,7 @@ A continuación se mostraran algunas capturas del consumo de los diferentes endp
 plataforma de Swagger, junto con sus resultados en nuestra aplicación propiamente tal. Para ello se
 utilizaron las siguiente credenciales: usuario: probando@mail.com  contraseña: password123
 
-<img src="/assets/images/get-pc.png" width="900px">
+![Metodo get](/assets/images/get-pc.png)
 
 
 Aquí podemos apreciar el uso del método GET del endpoint /todos, el cual fue correctamente ejecutado y nos dio como respuesta
@@ -194,7 +194,8 @@ vista de la misma aplicación, podemos fijarnos de que el nombre es el mismo que
 meticulosos, podemos además copiar la url de la imagen, abrirla en nuestro navegador y cerciorarnos de que ambas
 coinciden.
 
-![Metodo post resultado aplicacion](/assets/images/post-cel.jpeg)
+<img src="/assets/images/post-cel.jpeg" width="450px" height="750px">
+
 
 Ahora continuamos con la demostración del método PATCH, el cual en este caso lo usamos para actualizar el título
 de la tarea. Dentro de nuestra misma app este método se utiliza para actualizar el mismo título como tal o 
@@ -206,7 +207,8 @@ Y en la siguiente imagen podemos apreciar desde dentro de nuestra aplicación qu
 se actualizó correctamente, no solo por ver que coinciden, sino que además porque en la plataforma Swagger
 la respuesta a la petición fue exitosa.
 
-![Metodo patch resultado aplicacion](/assets/images/patch-cel.jpeg)
+<img src="/assets/images/patch-cel.jpeg" width="450px" height="750px">
+
 
 Por último, dentro de esta pequeña demostración le dimos cabida al consumo o uso del método DELETE, para el cual
 creamos especialmente esta nueva tarea. Para ello requerimos ingresar el ID de la tarea correspondiente a eliminar,
@@ -215,13 +217,13 @@ al igual que lo hicimos con el método PATCH.
 ![Metodo get para delete](/assets/images/delete1-pc.png)
 (Aquí se ven los datos de la nueva tarea que creamos para eliminar)
 
-![aplicación previa a delete](/assets/images/delete1-cel.jpeg)
+<img src="/assets/images/delete1-cel.jpeg" width="450px" height="750px">
 (Y aquí podemos observar la tarea dentro de la app previo a ser eliminada)
 
 ![Metodo delete](/assets/images/delete2-pc.png)
 (En esta imagen vemos que colocamos el id correspondiente a la tarea mencionada, y que la respuesta a la petición fue exitosa)
 
-![Aplicación post método delete](/assets/images/delete2-cel.jpeg)
+<img src="/assets/images/delete2-cel.jpeg" width="450px" height="750px">
 (Finalmente, luego del consumo de este método, la app vuelve a estar igual solo con sus dos tareas previas)
 
 Esta fue una pequeña demostración con algunos endpoints del uso y conexión entre la API y nuestra propia Aplicación, pero esta vez desde un
