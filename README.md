@@ -173,7 +173,7 @@ A continuación se mostraran algunas capturas del consumo de los diferentes endp
 plataforma de Swagger, junto con sus resultados en nuestra aplicación propiamente tal. Para ello se
 utilizaron las siguiente credenciales: usuario: probando@mail.com  contraseña: password123
 
-<img src="/assets/images/get-pc.png" width="400px">
+<img src="/assets/images/get-pc.png" width="900px">
 
 
 Aquí podemos apreciar el uso del método GET del endpoint /todos, el cual fue correctamente ejecutado y nos dio como respuesta
